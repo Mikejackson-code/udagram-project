@@ -46,6 +46,7 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
         return res.status(400).send('Invalid url or no url');
         } else {
               // 2. call filterImageFromURL(image_url) to filter the image
+        return res.status(200).send('valid url');      
         var image_path = await filterImageFromURL(image_url);
         var options = {
           dotfiles: 'deny',
