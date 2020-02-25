@@ -1,6 +1,8 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import { runInNewContext } from 'vm';
+import { truncate } from 'fs';
 
 (async () => {
 
@@ -42,13 +44,33 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
       let image_url = req.query.image_url;
       let is_image_url_valid = validateURL(image_url);
       
-      if(!image_url) {
-        return res.status(400).send('Invalid url or no url');
-        } else {
-              // 2. call filterImageFromURL(image_url) to filter the image
-        return res.status(200).send('valid url');      
+      
+      if(is_image_url_valid) {
+       // 2. call filterImageFromURL(image_url) to filter the image
+       let image_path = await filterImageFromURL(image_url);
+       let options = {
+          dotFiles: 'deny',
+          headers: {
+            'x-timestamp' : Date.now(),
+            'x-sent': true
+          }
+        };
+        // 3. send the resulting file in the response
+
+        res.sendFile(image_path, options, function (err) {
+          if (err) {
+            res.status(400).send('Image could not be accessed')
+          } else {
+            // 4. deletes any files on the server on  finish of the response
+            deleteLocalFiles([image_path]);
+          }
+        });
+
     }
-  });
+      else {
+        res.status(404).send('URL fo the image was not found')
+      }
+    });
   //! END @TODO1
   
   // Root Endpoint
